@@ -1,0 +1,37 @@
+# 🔐 Environment variables
+.env
+
+# 🐍 Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+
+# 📦 Virtual environment
+venv/
+env/
+.venv/
+
+# 📁 Output audio files (IMPORTANT)
+output/
+
+# 🧪 Logs
+*.log
+
+# 🧠 Model cache (Hugging Face / Torch)
+.cache/
+*.pt
+*.bin
+
+# 🖥️ OS files
+.DS_Store
+Thumbs.db
+
+# 🧰 IDE files
+.vscode/
+.idea/
+
+# 🧪 Temporary files
+*.tmp
+*.temp
