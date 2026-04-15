@@ -33,10 +33,10 @@ empathy-engine/
 │   │   └── tts.py
 │
 ├── output/
-├── frontend/
-│   ├── index.html
-│   ├── style.css
-│   └── script.js
+├
+│── index.html
+│── style.css
+│── script.js
 │
 ├── requirements.txt
 ├── .env
