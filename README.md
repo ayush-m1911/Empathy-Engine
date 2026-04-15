@@ -10,11 +10,11 @@ The system integrates transformer-based emotion detection with a parameter-drive
 
 ## 2. Key Features
 
-* Transformer-based emotion detection using a pre-trained model
+* Transformer-based emotion detection
 * Multi-emotion handling (primary and secondary emotions)
 * Dynamic modulation of speech parameters
 * High-quality speech generation using ElevenLabs
-* Web-based interface for text input, emotion display, and audio playback
+* Web-based interface for interaction and playback
 
 ---
 
@@ -62,7 +62,7 @@ cd empathy-engine
 python -m venv venv
 ```
 
-Activate the environment:
+Activate:
 
 * Windows:
 
@@ -88,7 +88,7 @@ pip install -r requirements.txt
 
 ### 4.4 Configure Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file:
 
 ```env
 ELEVENLABS_API_KEY=your_api_key_here
@@ -96,13 +96,13 @@ ELEVENLABS_API_KEY=your_api_key_here
 
 ---
 
-### 4.5 Run the Backend Server
+### 4.5 Run Backend
 
 ```bash
 python run.py
 ```
 
-The API will be available at:
+API runs at:
 
 ```
 http://127.0.0.1:8000
@@ -110,9 +110,9 @@ http://127.0.0.1:8000
 
 ---
 
-### 4.6 Serve Generated Audio Files
+### 4.6 Serve Audio Files
 
-Ensure the following configuration exists in `main.py`:
+Ensure this configuration exists in `main.py`:
 
 ```python
 from fastapi.staticfiles import StaticFiles
@@ -130,9 +130,9 @@ app.mount(
 
 ---
 
-### 4.7 Run the Frontend
+### 4.7 Run Frontend
 
-Open the following file in a browser:
+Open:
 
 ```
 frontend/index.html
@@ -140,45 +140,112 @@ frontend/index.html
 
 ---
 
-## 5. Usage
+## 5. API Endpoints
 
-1. Enter input text in the interface
-2. Submit the request
-3. The system performs:
+### 5.1 Generate Emotional Speech
+
+**Endpoint:**
+
+```
+POST /speak
+```
+
+**Query Parameters:**
+
+| Parameter | Type   | Description                            |
+| --------- | ------ | -------------------------------------- |
+| text      | string | Input text to be converted into speech |
+| voice_id  | string | Selected voice identifier              |
+
+---
+
+**Example Request:**
+
+```
+POST http://127.0.0.1:8000/speak?text=I am happy but nervous&voice_id=EXAVITQu4vr4xnSDxMaL
+```
+
+---
+
+**Response Format:**
+
+```json
+{
+  "emotion": "joy",
+  "secondary_emotion": "fear",
+  "intensity": 0.65,
+  "file": "output/joy_0.65.mp3"
+}
+```
+
+---
+
+**Response Fields:**
+
+| Field             | Description                       |
+| ----------------- | --------------------------------- |
+| emotion           | Primary detected emotion          |
+| secondary_emotion | Secondary emotion (if applicable) |
+| intensity         | Normalized intensity score (0–1)  |
+| file              | Path to generated audio file      |
+
+---
+
+### 5.2 Audio Retrieval
+
+Generated audio files are accessible via:
+
+```
+GET /output/{filename}
+```
+
+**Example:**
+
+```
+http://127.0.0.1:8000/output/joy_0.65.mp3
+```
+
+---
+
+## 6. Usage
+
+1. Enter input text
+2. Submit request
+3. System performs:
 
    * Emotion detection
-   * Intensity estimation
-   * Voice parameter modulation
+   * Intensity computation
+   * Voice parameter mapping
    * Speech generation
-4. The output includes:
+4. Output includes:
 
-   * Detected emotion(s)
+   * Emotion labels
    * Intensity visualization
    * Playable audio
 
 ---
 
-## 6. Design Choices
+## 7. Design Choices
 
-### 6.1 Emotion Detection
+### 7.1 Emotion Detection
 
-The system uses a transformer-based model:
+Uses transformer model:
 
 ```
 j-hartmann/emotion-english-distilroberta-base
 ```
 
-This model provides classification across multiple emotional categories such as joy, sadness, anger, fear, surprise, and neutral, enabling more nuanced analysis than rule-based approaches.
+This enables multi-class emotion classification with high accuracy.
 
 ---
 
-### 6.2 Multi-Emotion Handling
+### 7.2 Multi-Emotion Handling
 
-Instead of relying on a single dominant emotion, the system:
+Steps:
 
-1. Extracts scores for all emotions
-2. Selects the top two emotions
-3. Normalizes their scores to obtain weights
+1. Extract all emotion scores
+2. Select top 2
+3. Normalize weights
 
 Example:
 
@@ -186,32 +253,28 @@ Example:
 joy: 0.6
 sadness: 0.3
 
-Normalized:
+→ normalized:
 joy: 0.67
 sadness: 0.33
 ```
 
-This allows the system to represent emotionally complex inputs.
+---
+
+## 8. Emotion-to-Voice Mapping Logic
+
+A deterministic mapping is defined to convert detected emotions into specific vocal parameter configurations.
 
 ---
 
-## 7. Emotion-to-Voice Mapping Logic
+### 8.1 Parameters
 
-A deterministic mapping is defined to translate detected emotions into specific configurations of vocal parameters.
-
-### 7.1 Parameters
-
-The system controls the following parameters:
-
-* Stability (S): controls variation versus steadiness of speech
-* Similarity Boost (B): preserves speaker identity
+* Stability (S): controls variation vs steadiness
+* Similarity Boost (B): preserves voice identity
 * Style (T): controls expressiveness
 
 ---
 
-### 7.2 Base Parameter Configuration
-
-Each emotion is associated with a predefined parameter set:
+### 8.2 Base Mapping
 
 | Emotion  | Stability (S) | Similarity (B) | Style (T) |
 | -------- | ------------- | -------------- | --------- |
@@ -224,70 +287,35 @@ Each emotion is associated with a predefined parameter set:
 
 ---
 
-### 7.3 Intensity-Based Adjustment
+### 8.3 Intensity Scaling
 
-Each emotion is associated with an intensity score ( I \in [0,1] ).
-
-Parameters are adjusted using:
+Each emotion has intensity ( I \in [0,1] ):
 
 ```
 P_adjusted = P_base + (I × ΔP)
 ```
 
-Where:
-
-* ( P ) is a parameter (S, B, T)
-* ( ΔP ) is a scaling factor
-
-This ensures that stronger emotions produce more pronounced vocal changes.
-
 ---
 
-### 7.4 Multi-Emotion Blending
+### 8.4 Multi-Emotion Blending
 
-For two dominant emotions ( E_1 ) and ( E_2 ) with weights ( w_1 ) and ( w_2 ):
+For two emotions:
 
 ```
 P_final = (w1 × P(E1)) + (w2 × P(E2))
 ```
 
-This produces a continuous and realistic emotional representation.
+---
+
+### 8.5 Key Principle
+
+Voice identity is user-selected and remains constant.
+Emotion influences only the vocal parameters, ensuring expressive yet consistent output.
 
 ---
 
-### 7.5 Example
+## 9. Conclusion
 
-Input:
-
-```
-"I am excited but also nervous"
-```
-
-Detected:
-
-```
-Joy: 0.65
-Fear: 0.35
-```
-
-Computed:
-
-```
-Stability = (0.65 × 0.4) + (0.35 × 0.6)
-Style     = (0.65 × 0.8) + (0.35 × 0.3)
-```
+Empathy Engine demonstrates how AI can produce emotionally expressive speech by combining transformer-based understanding with parameter-driven synthesis.
 
 ---
-
-### 7.6 Key Design Principle
-
-Voice identity remains constant (user-selected), while emotional content modifies vocal behavior through parameter adjustments. This separation ensures consistency in speaker identity while enabling expressive variation.
-
----
-
-## 8. Conclusion
-
-Empathy Engine demonstrates how combining modern NLP techniques with parameter-driven speech synthesis can produce emotionally expressive and human-like audio output. The system moves beyond static TTS by incorporating emotional intelligence into voice generation.
-
----
-
